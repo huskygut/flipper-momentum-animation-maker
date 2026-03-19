@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="Animation.gif" width="700">
+  <img src="animation.gif" width="700">
 </p>
 
 <h1 align="center">flipper momentum animation maker</h1>
