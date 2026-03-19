@@ -10,6 +10,10 @@ Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simp
 
 ---
 
+<p align="center">
+  <img src="Animation.gif" width="700">
+</p>
+
 Create custom Momentum dolphin animations without dealing with frame conversion, folder structure headaches, or broken meta files.
 
 Load a GIF, preview the result, tune threshold and contrast using sliders or number inputs, and export a fully working animation pack with real .bm frames.
