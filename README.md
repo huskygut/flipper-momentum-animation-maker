@@ -2,11 +2,16 @@
   <img src="huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500">
 </p>
 
+<p align="center">
+  <img src="Animation.gif" width="700">
+</p>
+
 <h1 align="center">flipper momentum animation maker</h1>
 
 <p align="center">
 Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simple desktop GUI.
 </p>
+
 
 ---
 
