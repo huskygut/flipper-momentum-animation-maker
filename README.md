@@ -15,9 +15,6 @@ Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simp
 
 ---
 
-<p align="center">
-  <img src="Animation.gif" width="700">
-</p>
 
 Flipper Momentum Animation Maker
 
