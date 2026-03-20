@@ -19,235 +19,122 @@ Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simp
   <img src="Animation.gif" width="700">
 </p>
 
-Create custom Momentum dolphin animations without dealing with frame conversion, folder structure headaches, or broken meta files.
+Flipper Momentum Animation Maker
 
-Load a GIF, preview the result, tune threshold and contrast using sliders or number inputs, and export a fully working animation pack with real .bm frames.
+Flipper Momentum Animation Maker is a desktop Python tool that turns GIFs into Flipper Zero Momentum-compatible dolphin animations.
 
----
+It loads a GIF, extracts the frames, resizes them to 128x64, converts them to 1-bit monochrome, and exports the files needed for a Momentum animation pack. That includes the .bm frames, meta.txt, manifest.txt, and the correct folder structure.
 
-WHAT THIS TOOL DOES
+This tool is currently made for Momentum-style animation packs. It is not meant to be a universal Flipper animation tool for every firmware.
 
-This tool converts an animated GIF into a Momentum-compatible Flipper animation pack.
+What it does
 
-It handles the annoying parts automatically:
+Loads GIF files
 
-• extracts frames from a GIF  
-• resizes frames to 128x64  
-• converts frames to 1-bit monochrome  
-• lets you tune image quality before export  
-• exports real .bm files  
-• generates meta.txt and manifest.txt  
-• builds the correct Momentum folder structure  
+Extracts frames automatically
 
-You load a GIF, adjust it until it looks right, and export.
+Resizes frames to 128x64
 
----
+Converts frames to 1-bit monochrome
 
-FEATURES
+Lets you adjust threshold and contrast before export
 
-• GIF to Flipper animation conversion  
-• Live preview  
-• Threshold control with slider and number input  
-• Contrast control with slider and number input  
-• Playback preview  
-• Proper Momentum folder structure  
-• Real .bm frame export  
-• Auto-generated meta.txt and manifest.txt  
-• Works on Windows and Linux  
+Shows a live preview inside the app
 
----
+Exports .bm frame files
 
-OUTPUT STRUCTURE
+Builds meta.txt and updates manifest.txt
 
-PackName  
-  Anims  
-    manifest.txt  
-    AnimationName_128x64  
-      frame_0.bm  
-      frame_1.bm  
-      frame_2.bm  
-      meta.txt  
+Creates the correct folder structure for Momentum
 
-The animation folder name automatically becomes:
+Can also make a ZIP of the finished pack
 
+Current status
+
+The app is working and exporting correctly.
+
+Frame ordering is fixed.
+
+Manifest formatting is fixed.
+
+Meta.txt active frame handling is fixed.
+
+Animation naming with _128x64 is fixed.
+
+Preview scaling has been improved.
+
+The preview box size was reduced to fit the UI better.
+
+Threshold and contrast controls are working with both sliders and number input.
+
+The app is stable and usable right now, although the preview still is not a perfect match for the Flipper screen.
+
+How to use it
+
+Open the app
+
+Load a GIF
+
+Choose your pack name and animation name
+
+Adjust threshold and contrast until the preview looks right
+
+Set the Momentum animation values you want
+
+Export the pack
+
+Copy the finished pack to your Flipper Momentum asset pack folder
+
+Output
+
+The app exports a folder structure like this
+
+PackName
+Anims
 AnimationName_128x64
+frame_0.bm
+frame_1.bm
+frame_2.bm
+meta.txt
 
-The Name field inside manifest.txt matches this exactly so Momentum recognizes it properly.
+It also updates manifest.txt in the Anims folder so the new animation is included.
 
----
+Requirements
 
-REQUIREMENTS
+Python
 
-Python 3.10 or newer  
+Pillow
 
-Required packages  
-pillow  
-heatshrink2  
+heatshrink2
 
----
+Why I made this
 
-WINDOWS INSTALLATION
+I wanted a simpler way to make custom Momentum animations without having to manually convert frames and build the files by hand. This started as a small utility and grew into a more complete desktop tool.
 
-1. Install Python  
-Make sure Add Python to PATH is checked  
+Limitations
 
-2. Verify install  
-python --version  
-or  
-py --version  
+Right now this is focused on Momentum-compatible animation packs.
 
-3. Download script  
-flipper_momentum_gif_maker.py  
+The preview is close, but not identical to the way the Flipper screen looks on device.
 
-4. Install packages  
-pip install pillow heatshrink2  
+The code started as a single-file utility, so it will likely be split into separate files as the project grows.
 
-If pip fails  
-python -m pip install pillow heatshrink2  
+Planned improvements
 
-5. Run  
-python flipper_momentum_gif_maker.py  
-or  
-py flipper_momentum_gif_maker.py  
+Better preview accuracy
 
----
+Frame scrubber
 
-LINUX INSTALLATION
+FPS control
 
-1. Install Python  
-python3 --version  
+Drag and drop support
 
-Install if needed  
+Windows EXE build
 
-Debian Ubuntu  
-sudo apt update  
-sudo apt install python3 python3-pip python3-tk  
+Cleaner code structure split into multiple files
 
-Fedora  
-sudo dnf install python3 python3-pip python3-tkinter  
+Better demo GIF and screenshots
 
-Arch  
-sudo pacman -S python python-pip tk  
+Thanks
 
-2. Download script  
-flipper_momentum_gif_maker.py  
-
-3. Install packages  
-pip3 install pillow heatshrink2  
-
-or  
-python3 -m pip install pillow heatshrink2  
-
-4. Run  
-python3 flipper_momentum_gif_maker.py  
-
----
-
-HOW TO USE
-
-1. Open the app  
-2. Load a GIF  
-3. Watch the preview  
-4. Adjust threshold  
-5. Adjust contrast  
-6. Enter pack name and animation name  
-7. Export  
-
----
-
-WHY THRESHOLD AND CONTRAST MATTER
-
-Flipper animations are tiny and monochrome  
-
-128 pixels wide  
-64 pixels tall  
-1-bit color  
-
-Bad conversion turns images into garbage.
-
-Use controls to fix it:
-
-Increase contrast if image looks weak  
-Adjust threshold if image looks blotchy or faded  
-
-Simple bold images work best.
-
----
-
-TIPS FOR BEST RESULTS
-
-• use high contrast GIFs  
-• use simple shapes  
-• avoid tiny details  
-• avoid heavy gradients  
-• avoid chaotic motion  
-• test multiple threshold values  
-
----
-
-TROUBLESHOOTING
-
-SCRIPT DOES NOT START  
-Install required packages  
-
-WINDOWS  
-pip install pillow heatshrink2  
-
-LINUX  
-pip3 install pillow heatshrink2  
-
----
-
-GUI CLOSES IMMEDIATELY  
-Run from terminal  
-
-WINDOWS  
-python flipper_momentum_gif_maker.py  
-
-LINUX  
-python3 flipper_momentum_gif_maker.py  
-
----
-
-ANIMATION LOOKS BLOTCHY  
-Adjust threshold  
-
-ANIMATION LOOKS FAINT  
-Adjust contrast  
-
-ONLY ONE ANIMATION SHOWS  
-Check manifest.txt  
-
-FLIPPER NOT SHOWING ANIMATION  
-Check folder structure and names  
-
----
-
-PROJECT SCOPE
-
-This project does one thing:
-
-create Momentum-compatible Flipper animations without the process being painful
-
----
-
-PLANNED IMPROVEMENTS
-
-• frame scrubber  
-• crop and fit modes  
-• FPS control  
-• idle frame selection  
-• drag and drop support  
-• Windows executable  
-
----
-
-REPOSITORY NAME
-
-flipper-momentum-animation-maker  
-
----
-
-LICENSE
-
-Use it, modify it, improve it, break it, fix it, make it better
+Thanks to everyone who tested it, gave feedback, and pointed out things that needed fixing. The project is still growing, and useful feedback helps a lot.
