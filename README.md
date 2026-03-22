@@ -71,7 +71,6 @@ Run the app with:
 
 python flipper_momentum_gif_maker.py
 
-If you use the packaged Windows EXE or installer, Python is not needed.
 
 Install on Flipper
 
