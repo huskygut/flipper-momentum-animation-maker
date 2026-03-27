@@ -15,6 +15,15 @@ Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simp
 
 ---
 
+Recent Update
+Refactored the app from a single-file script into a modular multi-file project
+Added built-in frame tools for reducing and trimming GIF frames
+Improved export safety with rollback protection
+Fixed .bm export issues
+Improved caching, preview behavior, and general stability
+
+
+---
 
 Flipper Momentum Animation Maker
 
