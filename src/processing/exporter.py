@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from bm_encoder import BMEncoder
+from src.core.bm_encoder import BMEncoder
 
 
 @dataclass

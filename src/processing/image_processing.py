@@ -3,8 +3,8 @@ from pathlib import Path
 
 from PIL import Image, ImageEnhance, ImageFilter, ImageSequence
 
-from constants import PREVIEW_BG, PREVIEW_FG, PREVIEW_SIZE, WIDTH, HEIGHT
-from utils import sanitize_name
+from src.core.constants import PREVIEW_BG, PREVIEW_FG, PREVIEW_SIZE, WIDTH, HEIGHT
+from src.core.utils import sanitize_name
 
 _CACHE_MAX = 256  # Maximum processed frames to keep in memory
 

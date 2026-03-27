@@ -42,7 +42,7 @@ What it does
   Lets you adjust threshold and contrast before export
   Shows a live preview inside the app
   Exports .bm frame files
-  Builds meta.txt and updates   nifest.txt
+  Builds meta.txt and updates manifest.txt
   Creates the correct folder structure for Momentum
   Can also make a ZIP of the finished pack
 
@@ -78,7 +78,7 @@ pip install pillow heatshrink2
 
 Run the app with:
 
-python flipper_momentum_gif_maker.py
+python src/main.py
 
 
 Install on Flipper
@@ -123,9 +123,9 @@ Planned improvements
   FPS control
   Drag and drop support
   Windows EXE build
-  Cleaner code structure split into     multiple files
+  Cleaner code structure split into multiple files
   Better demo GIF and screenshots
 
 Thanks
 
-Thanks to everyone who tested it, gave feedback, and pointed out things that needed fixing. The project is still growing, and useful feedback helps a lot..
+Thanks to everyone who tested it, gave feedback, and pointed out things that needed fixing. The project is still growing, and useful feedback helps a lot.

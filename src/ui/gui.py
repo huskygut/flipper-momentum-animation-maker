@@ -1,56 +1,44 @@
-import io
-import re
-import zipfile
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
 try:
-    from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageSequence, ImageTk
+    from PIL import Image, ImageTk
 except ImportError as exc:
     raise SystemExit("Pillow is required. Install it with: pip install pillow") from exc
 
-try:
-    import heatshrink2
-except ImportError as exc:
-    raise SystemExit("heatshrink2 is required. Install it with: pip install heatshrink2") from exc
-
-WIDTH = 128
-HEIGHT = 64
-PREVIEW_SCALE = 3
-PREVIEW_SIZE = (WIDTH * PREVIEW_SCALE, HEIGHT * PREVIEW_SCALE)
-PREVIEW_BG = (202, 214, 180)
-PREVIEW_FG = (39, 52, 35)
-
-THEME_BG = "#0f0f10"
-THEME_PANEL = "#18181b"
-THEME_PANEL_ALT = "#202024"
-THEME_INPUT = "#111214"
-THEME_FG = "#f3f3f3"
-THEME_ACCENT = "#ff8c1a"
-THEME_ACCENT_HOVER = "#ff9f3d"
-THEME_ACCENT_DARK = "#c96a08"
-THEME_BORDER = "#38383f"
-
-DEFAULT_OUTPUT_TEXT = (
-    "Load a GIF, tweak threshold / contrast with the slider or number box, then export.\n"
+from src.core.constants import (
+    DEFAULT_OUTPUT_TEXT,
+    HEIGHT,
+    PREVIEW_SIZE,
+    THEME_ACCENT,
+    THEME_ACCENT_DARK,
+    THEME_ACCENT_HOVER,
+    THEME_BG,
+    THEME_BORDER,
+    THEME_FG,
+    THEME_INPUT,
+    THEME_PANEL,
+    THEME_PANEL_ALT,
+    WIDTH,
 )
+from src.core.bm_encoder import BMEncoder
+from src.processing.exporter import PackExporter
+from src.processing.image_processing import ImageProcessor
+from src.core.manifest import ManifestBuilder
+from src.core.utils import sanitize_name
 
 
-def sanitize_name(name: str, fallback: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9_-]+", "_", name.strip())
-    cleaned = re.sub(r"_+", "_", cleaned).strip("_")
-    return cleaned or fallback
-
-
-class FlipperMomentumGifMaker:
+class FlipperMomentumGifMakerApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Flipper Momentum GIF Maker")
         self.root.geometry("1060x700")
         self.root.minsize(980, 640)
 
-        self.frames: list[Image.Image] = []
+        self.all_frames: list[Image.Image] = []
+        self.active_indices: list[int] = []
+        self._indices_clean: bool = True   # False → _normalize_active_indices must validate
         self.preview_image = None
         self.preview_canvas_image_id = None
         self.current_frame_index = 0
@@ -58,6 +46,8 @@ class FlipperMomentumGifMaker:
         self.preview_refresh_job = None
         self.info_refresh_job = None
         self.playing = False
+        self.frame_tools_widgets: list[tk.Widget] = []
+        self._trace_ids: list[tuple] = []  # (var, mode, trace_id) – cleaned up on close
 
         self.pack_name = tk.StringVar(value="HuskyPack")
         self.anim_name = tk.StringVar(value="ghostcat")
@@ -75,11 +65,155 @@ class FlipperMomentumGifMaker:
         self.passive_frames = tk.IntVar(value=1)
         self.fit_mode = tk.StringVar(value="contain")
         self.create_zip = tk.BooleanVar(value=True)
+        self.target_frames = tk.IntVar(value=50)
+        self.trim_start = tk.IntVar(value=0)
+        self.trim_end = tk.IntVar(value=0)
+
+        self.image_processor = ImageProcessor(
+            fit_mode_getter=lambda: self.fit_mode.get(),
+            threshold_getter=lambda: self._safe_int(self.threshold, 140),
+            contrast_getter=lambda: self._safe_float(self.contrast, 2.2),
+        )
+        self.manifest_builder = ManifestBuilder(
+            frame_rate_getter=lambda: self._safe_int(self.frame_rate, 6),
+            duration_getter=lambda: self._safe_int(self.duration, 360),
+            passive_frames_getter=lambda: self._safe_int(self.passive_frames, 1),
+            active_cycles_getter=lambda: self._safe_int(self.active_cycles, 1),
+            active_cooldown_getter=lambda: self._safe_int(self.active_cooldown, 1),
+            min_butthurt_getter=lambda: self._safe_int(self.min_butthurt, 0),
+            max_butthurt_getter=lambda: self._safe_int(self.max_butthurt, 18),
+            min_level_getter=lambda: self._safe_int(self.min_level, 1),
+            max_level_getter=lambda: self._safe_int(self.max_level, 30),
+            weight_getter=lambda: self._safe_int(self.weight, 3),
+        )
+        self.exporter = PackExporter(self.image_processor, self.manifest_builder)
 
         self._build_ui()
         self._apply_theme()
         self._wire_preview_refresh()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+
+    def _normalize_active_indices(self) -> None:
+        if self._indices_clean:
+            return
+        if not self.all_frames:
+            self.active_indices = []
+            self._indices_clean = True
+            return
+        valid = [i for i in self.active_indices if 0 <= i < len(self.all_frames)]
+        if len(valid) != len(self.active_indices):
+            self.active_indices = valid
+        self._indices_clean = True
+
+    def has_active_frames(self) -> bool:
+        self._normalize_active_indices()
+        return bool(self.active_indices)
+
+    def active_frame_count(self) -> int:
+        self._normalize_active_indices()
+        return len(self.active_indices)
+
+    def get_active_frame(self, active_pos: int):
+        if not self.has_active_frames():
+            return None
+        active_pos = max(0, min(active_pos, len(self.active_indices) - 1))
+        return self.all_frames[self.active_indices[active_pos]]
+
+    def iter_active_frames_for_export(self):
+        self._normalize_active_indices()
+        for idx in self.active_indices:
+            yield self.all_frames[idx]
+
+    def _clamp_current_frame(self) -> None:
+        active_count = self.active_frame_count()
+        if active_count == 0:
+            self.current_frame_index = 0
+            self.frame_slider.configure(from_=0, to=0)
+            self.frame_slider.set(0)
+            return
+        self.current_frame_index = max(0, min(self.current_frame_index, active_count - 1))
+        self.frame_slider.configure(from_=0, to=max(0, active_count - 1))
+        self.frame_slider.set(self.current_frame_index)
+
+    def _evenly_reduce_indices(self, total: int, target: int) -> list[int]:
+        target = max(1, min(target, total))
+        if target >= total:
+            return list(range(total))
+        if target == 1:
+            return [0]
+        step = (total - 1) / (target - 1)
+        indices = [round(i * step) for i in range(target)]
+        deduped: list[int] = []
+        seen = set()
+        for idx in indices:
+            idx = max(0, min(total - 1, int(idx)))
+            if idx not in seen:
+                deduped.append(idx)
+                seen.add(idx)
+        candidate = 0
+        while len(deduped) < target and candidate < total:
+            if candidate not in seen:
+                deduped.append(candidate)
+                seen.add(candidate)
+            candidate += 1
+        return sorted(deduped)[:target]
+
+    def _apply_active_indices(self, new_indices: list[int], action_name: str) -> None:
+        if not self.all_frames:
+            return
+        normalized = sorted({i for i in new_indices if 0 <= i < len(self.all_frames)})
+        if not normalized:
+            messagebox.showerror("No frames left", f"{action_name} would remove every frame. Keep at least one frame.")
+            return
+        was_playing = self.playing
+        self.playing = False
+        self._cancel_playback()
+        self.active_indices = normalized
+        self._indices_clean = True
+        self.current_frame_index = min(self.current_frame_index, len(self.active_indices) - 1)
+        self._clamp_current_frame()
+        self._update_control_states()
+        self.refresh_preview()
+        self.refresh_info_text()
+        if was_playing:
+            self.playing = True
+            self._play_step()
+
+    def reduce_frames_evenly(self) -> None:
+        if not self.has_active_frames():
+            return
+        current_total = self.active_frame_count()
+        target = max(1, self._safe_int(self.target_frames, current_total))
+        if target >= current_total:
+            messagebox.showinfo("Nothing to reduce", "Target frame count is already greater than or equal to the active frame count.")
+            return
+        reduced_positions = self._evenly_reduce_indices(current_total, target)
+        new_indices = [self.active_indices[pos] for pos in reduced_positions]
+        self._apply_active_indices(new_indices, "Frame reduction")
+
+    def apply_trim(self) -> None:
+        if not self.has_active_frames():
+            return
+        start_trim = max(0, self._safe_int(self.trim_start, 0))
+        end_trim = max(0, self._safe_int(self.trim_end, 0))
+        current_total = self.active_frame_count()
+        if start_trim == 0 and end_trim == 0:
+            messagebox.showinfo("Nothing to trim", "Trim start and trim end are both set to 0.")
+            return
+        if start_trim + end_trim >= current_total:
+            messagebox.showerror("Trim too large", "Trim values would remove every active frame.")
+            return
+        new_indices = self.active_indices[start_trim: current_total - end_trim]
+        self._apply_active_indices(new_indices, "Trim")
+
+    def reset_active_frames(self) -> None:
+        if not self.all_frames:
+            return
+        self.trim_start.set(0)
+        self.trim_end.set(0)
+        self.target_frames.set(len(self.all_frames))
+        self._apply_active_indices(list(range(len(self.all_frames))), "Reset")
 
     def _safe_int(self, var, default=0) -> int:
         try:
@@ -211,32 +345,26 @@ class FlipperMomentumGifMaker:
         tk.Label(top, text="Animation Name").grid(row=0, column=1, sticky="w")
         tk.Entry(top, textvariable=self.anim_name, width=18).grid(row=1, column=1, padx=4)
 
-        tk.Button(top, text="Load GIF", command=self.load_gif, width=14).grid(row=1, column=2, padx=6)
-        tk.Button(top, text="Export Pack", command=self.export_pack, width=14).grid(row=1, column=3, padx=6)
-        tk.Button(top, text="Play / Stop", command=self.toggle_playback, width=14).grid(row=1, column=4, padx=6)
+        self.load_button = tk.Button(top, text="Load GIF", command=self.load_gif, width=14)
+        self.load_button.grid(row=1, column=2, padx=6)
+        self.export_button = tk.Button(top, text="Export Pack", command=self.export_pack, width=14)
+        self.export_button.grid(row=1, column=3, padx=6)
+        self.play_button = tk.Button(top, text="Play / Stop", command=self.toggle_playback, width=14)
+        self.play_button.grid(row=1, column=4, padx=6)
 
         options = tk.LabelFrame(self.root, text="Conversion / Momentum Settings", bg=THEME_PANEL)
         options.pack(fill="x", padx=10, pady=6)
 
+        self._add_slider_plus_number(options, "Threshold", self.threshold, 0, 255, 0, 0, 1)
         self._add_slider_plus_number(
             options,
-            label="Threshold",
-            variable=self.threshold,
-            from_=0,
-            to=255,
-            row=0,
-            column=0,
-            resolution=1,
-        )
-        self._add_slider_plus_number(
-            options,
-            label="Contrast",
-            variable=self.contrast,
-            from_=0.1,
-            to=5.0,
-            row=0,
-            column=4,
-            resolution=0.1,
+            "Contrast",
+            self.contrast,
+            0.1,
+            5.0,
+            0,
+            4,
+            0.1,
             is_float=True,
         )
 
@@ -259,6 +387,22 @@ class FlipperMomentumGifMaker:
         tk.Checkbutton(options, text="Also make ZIP", variable=self.create_zip).grid(
             row=7, column=2, sticky="w", padx=6
         )
+
+        frame_tools = tk.LabelFrame(self.root, text="Frame Tools", bg=THEME_PANEL)
+        frame_tools.pack(fill="x", padx=10, pady=(0, 6))
+
+        self.target_frames_box = self._add_spinbox(frame_tools, "Target frames", self.target_frames, 1, 9999, 0, 0)
+        self.reduce_button = tk.Button(frame_tools, text="Reduce Evenly", command=self.reduce_frames_evenly, width=14)
+        self.reduce_button.grid(row=1, column=1, sticky="w", padx=6, pady=(20, 6))
+
+        self.trim_start_box = self._add_spinbox(frame_tools, "Trim start", self.trim_start, 0, 9999, 0, 2)
+        self.trim_end_box = self._add_spinbox(frame_tools, "Trim end", self.trim_end, 0, 9999, 0, 3)
+        self.trim_button = tk.Button(frame_tools, text="Apply Trim", command=self.apply_trim, width=12)
+        self.trim_button.grid(row=1, column=4, sticky="w", padx=6, pady=(20, 6))
+
+        self.reset_frames_button = tk.Button(frame_tools, text="Reset Frames", command=self.reset_active_frames, width=12)
+        self.reset_frames_button.grid(row=1, column=5, sticky="w", padx=6, pady=(20, 6))
+        self.frame_tools_widgets = [self.target_frames_box, self.trim_start_box, self.trim_end_box]
 
         middle = tk.Frame(self.root, bg=THEME_BG)
         middle.pack(fill="both", expand=True, padx=10, pady=8)
@@ -283,8 +427,10 @@ class FlipperMomentumGifMaker:
 
         controls = tk.Frame(left, bg=THEME_PANEL)
         controls.pack(fill="x", padx=8, pady=(0, 8))
-        tk.Button(controls, text="Prev", command=self.prev_frame, width=10).pack(side="left", padx=4)
-        tk.Button(controls, text="Next", command=self.next_frame, width=10).pack(side="left", padx=4)
+        self.prev_button = tk.Button(controls, text="Prev", command=self.prev_frame, width=10)
+        self.prev_button.pack(side="left", padx=4)
+        self.next_button = tk.Button(controls, text="Next", command=self.next_frame, width=10)
+        self.next_button.pack(side="left", padx=4)
 
         self.frame_slider = tk.Scale(
             controls,
@@ -306,14 +452,10 @@ class FlipperMomentumGifMaker:
         self.output_text.pack(fill="both", expand=True, padx=8, pady=8)
         self.output_text.insert("1.0", DEFAULT_OUTPUT_TEXT)
         self.output_text.configure(state="disabled")
+        self._update_control_states()
 
     def _wire_preview_refresh(self) -> None:
-        preview_vars = [
-            self.threshold,
-            self.contrast,
-            self.frame_rate,
-            self.fit_mode,
-        ]
+        preview_vars = [self.threshold, self.contrast, self.frame_rate, self.fit_mode]
         info_vars = [
             self.threshold,
             self.contrast,
@@ -333,9 +475,11 @@ class FlipperMomentumGifMaker:
         ]
 
         for var in preview_vars:
-            var.trace_add("write", self._queue_preview_refresh)
+            tid = var.trace_add("write", self._queue_preview_refresh)
+            self._trace_ids.append((var, "write", tid))
         for var in info_vars:
-            var.trace_add("write", self._queue_info_refresh)
+            tid = var.trace_add("write", self._queue_info_refresh)
+            self._trace_ids.append((var, "write", tid))
 
     def _queue_preview_refresh(self, *_args) -> None:
         if self.preview_refresh_job is None:
@@ -443,6 +587,27 @@ class FlipperMomentumGifMaker:
         box.bind("<KeyRelease>", lambda _e: self._queue_info_refresh())
         box.bind("<FocusOut>", lambda _e: self._coerce_spinbox_value(variable, minv, maxv, False))
         box.bind("<Return>", lambda _e: self._coerce_spinbox_value(variable, minv, maxv, False))
+        return box
+
+    def _set_widget_state(self, widget, state: str) -> None:
+        try:
+            widget.configure(state=state)
+        except Exception:
+            pass
+
+    def _update_control_states(self) -> None:
+        has_frames = self.has_active_frames()
+        nav_state = "normal" if has_frames else "disabled"
+        self._set_widget_state(self.export_button, nav_state)
+        self._set_widget_state(self.play_button, nav_state)
+        self._set_widget_state(self.prev_button, nav_state)
+        self._set_widget_state(self.next_button, nav_state)
+        self._set_widget_state(self.frame_slider, nav_state)
+        self._set_widget_state(self.reduce_button, nav_state)
+        self._set_widget_state(self.trim_button, nav_state)
+        self._set_widget_state(self.reset_frames_button, nav_state)
+        for widget in self.frame_tools_widgets:
+            self._set_widget_state(widget, nav_state)
 
     def set_output_text(self, text: str) -> None:
         self.output_text.configure(state="normal")
@@ -461,10 +626,10 @@ class FlipperMomentumGifMaker:
         self.playing = False
         self._cancel_playback()
         self._cancel_queued_refreshes()
+        self.image_processor.clear_cache()
 
         try:
-            with Image.open(path) as img:
-                loaded_frames = [frame.copy().convert("RGBA") for frame in ImageSequence.Iterator(img)]
+            loaded_frames = self.image_processor.load_gif_frames(path)
         except Exception as exc:
             messagebox.showerror("Load failed", f"Could not load GIF:\n{exc}")
             return
@@ -473,89 +638,80 @@ class FlipperMomentumGifMaker:
             messagebox.showerror("Load failed", "No frames were found in that GIF.")
             return
 
-        self.frames = loaded_frames
-        base_name = sanitize_name(Path(path).stem, "animation")
-        self.anim_name.set(base_name)
+        estimated_mb = self.image_processor.estimate_memory_mb(loaded_frames)
+        if len(loaded_frames) > 300 or estimated_mb > 200:
+            proceed = messagebox.askyesno(
+                "Large GIF warning",
+                f"This GIF has {len(loaded_frames)} frames and may use about {estimated_mb:.1f} MB in memory.\n\nContinue loading it?",
+            )
+            if not proceed:
+                return
+
+        self.all_frames = loaded_frames
+        self.active_indices = list(range(len(loaded_frames)))
+        self._indices_clean = True
+        self.target_frames.set(min(50, max(1, len(loaded_frames))))
+        self.trim_start.set(0)
+        self.trim_end.set(0)
+        self.anim_name.set(self.image_processor.suggest_animation_name(path))
         self.current_frame_index = 0
-        self.frame_slider.configure(to=max(0, len(self.frames) - 1))
+        self.frame_slider.configure(from_=0, to=max(0, self.active_frame_count() - 1))
         self.frame_slider.set(0)
+        self._update_control_states()
         self.refresh_preview()
         self.refresh_info_text()
 
-    def fit_image(self, img: Image.Image) -> Image.Image:
-        src = img.convert("RGBA")
-        bg = Image.new("RGBA", (WIDTH, HEIGHT), (255, 255, 255, 255))
-
-        if self.fit_mode.get() == "cover":
-            scale = max(WIDTH / src.width, HEIGHT / src.height)
-        else:
-            scale = min(WIDTH / src.width, HEIGHT / src.height)
-
-        new_size = (
-            max(1, int(round(src.width * scale))),
-            max(1, int(round(src.height * scale))),
-        )
-        resized = src.resize(new_size, Image.LANCZOS)
-        x = (WIDTH - resized.width) // 2
-        y = (HEIGHT - resized.height) // 2
-        bg.paste(resized, (x, y), resized)
-        return bg.convert("RGB")
-
-    def process_frame(self, img: Image.Image) -> Image.Image:
-        fitted = self.fit_image(img)
-        gray = fitted.convert("L")
-        contrast = max(0.1, self._safe_float(self.contrast, 2.2))
-        gray = ImageEnhance.Contrast(gray).enhance(contrast)
-        threshold = max(0, min(255, self._safe_int(self.threshold, 140)))
-        return gray.point(lambda p: 255 if p > threshold else 0, mode="1")
-
-    def build_preview_image(self, frame: Image.Image) -> Image.Image:
-        mask = frame.convert("L").point(lambda p: 255 if p == 0 else 0, mode="L")
-        preview = Image.new("RGB", (WIDTH, HEIGHT), PREVIEW_BG)
-        preview.paste(PREVIEW_FG, mask=mask)
-        preview = preview.resize(PREVIEW_SIZE, Image.NEAREST)
-        if not self.playing:
-            preview = preview.filter(ImageFilter.BoxBlur(0.2))
-        return preview
-
     def refresh_preview(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             self.preview_canvas.itemconfig(self.preview_canvas_image_id, image="")
             self.preview_image = None
             self.status_label.config(text="No GIF loaded")
             return
 
-        self.current_frame_index = max(0, min(self.current_frame_index, len(self.frames) - 1))
-        frame = self.process_frame(self.frames[self.current_frame_index])
-        preview = self.build_preview_image(frame)
-        self.preview_image = ImageTk.PhotoImage(preview)
-        self.preview_canvas.itemconfig(self.preview_canvas_image_id, image=self.preview_image)
+        self.current_frame_index = max(0, min(self.current_frame_index, self.active_frame_count() - 1))
+        try:
+            current_source = self.get_active_frame(self.current_frame_index)
+            if current_source is None:
+                raise ValueError("No active frame available for preview.")
+            frame = self.image_processor.process_frame(current_source)
+            preview = self.image_processor.build_preview_image(frame, self.playing)
+            self.preview_image = ImageTk.PhotoImage(preview)
+            self.preview_canvas.itemconfig(self.preview_canvas_image_id, image=self.preview_image)
+        except Exception as exc:
+            self.preview_canvas.itemconfig(self.preview_canvas_image_id, image="")
+            self.preview_image = None
+            self.status_label.config(text=f"Preview failed: {exc}")
+            return
         self.status_label.config(
             text=(
-                f"Frame {self.current_frame_index + 1}/{len(self.frames)}   "
+                f"Frame {self.current_frame_index + 1}/{self.active_frame_count()}   "
                 f"{WIDTH}x{HEIGHT}   {max(1, self._safe_int(self.frame_rate, 6))} fps\n"
                 f"Threshold {self._safe_int(self.threshold, 140)}   Contrast {self._safe_float(self.contrast, 2.2):.1f}"
             )
         )
 
     def refresh_info_text(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             self.set_output_text(DEFAULT_OUTPUT_TEXT)
             return
 
-        passive = max(1, min(self._safe_int(self.passive_frames, 1), len(self.frames)))
-        active = max(0, len(self.frames) - passive)
-        frame_order = " ".join(str(i) for i in range(len(self.frames)))
+        active_count = self.active_frame_count()
+        passive = max(1, min(self._safe_int(self.passive_frames, 1), active_count))
+        active = max(0, active_count - passive)
+        indices_preview = " ".join(str(i) for i in self.active_indices[:100])
+        if len(self.active_indices) > 100:
+            indices_preview += " ..."
         anim_dir = f"{sanitize_name(self.anim_name.get(), 'animation')}_128x64"
         text = (
             f"Pack folder:\n{sanitize_name(self.pack_name.get(), 'PackName')}/Anims/\n\n"
             f"Animation folder:\n{anim_dir}\n\n"
-            f"Frames loaded: {len(self.frames)}\n"
+            f"Original frames: {len(self.all_frames)}\n"
+            f"Active frames: {active_count}\n"
             f"Passive frames: {passive}\n"
-            f"Active frames: {active}\n"
+            f"Active animation frames: {active}\n"
             f"Threshold: {self._safe_int(self.threshold, 140)}\n"
             f"Contrast: {self._safe_float(self.contrast, 2.2):.1f}\n"
-            f"Frames order:\n{frame_order}\n"
+            f"Original frame indices kept:\n{indices_preview}\n"
         )
         self.set_output_text(text)
 
@@ -567,19 +723,19 @@ class FlipperMomentumGifMaker:
         self.refresh_preview()
 
     def prev_frame(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             return
-        self.current_frame_index = (self.current_frame_index - 1) % len(self.frames)
+        self.current_frame_index = (self.current_frame_index - 1) % self.active_frame_count()
         self.frame_slider.set(self.current_frame_index)
 
     def next_frame(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             return
-        self.current_frame_index = (self.current_frame_index + 1) % len(self.frames)
+        self.current_frame_index = (self.current_frame_index + 1) % self.active_frame_count()
         self.frame_slider.set(self.current_frame_index)
 
     def toggle_playback(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             return
         self.playing = not self.playing
         if self.playing:
@@ -597,98 +753,15 @@ class FlipperMomentumGifMaker:
             self.play_job = None
 
     def _play_step(self) -> None:
-        if not self.playing or not self.frames:
+        if not self.playing or not self.has_active_frames():
             return
-        self.current_frame_index = (self.current_frame_index + 1) % len(self.frames)
+        self.current_frame_index = (self.current_frame_index + 1) % self.active_frame_count()
         self.frame_slider.set(self.current_frame_index)
         delay = max(20, int(1000 / max(1, self._safe_int(self.frame_rate, 6))))
         self.play_job = self.root.after(delay, self._play_step)
 
-    def convert_bm(self, img: Image.Image) -> bytes:
-        with io.BytesIO() as output:
-            bm_img = img.convert("1")
-            bm_img = ImageOps.invert(bm_img)
-            bm_img.save(output, format="XBM")
-            xbm = output.getvalue().decode(errors="ignore")
-
-        try:
-            hex_bytes = re.findall(r"0x([0-9a-fA-F]{2})", xbm)
-            if not hex_bytes:
-                raise ValueError("No XBM byte data found")
-            raw_bytes = bytearray(int(byte, 16) for byte in hex_bytes)
-        except Exception as exc:
-            raise ValueError(f"Failed to parse XBM data: {exc}") from exc
-
-        compressed_payload = bytearray(heatshrink2.compress(raw_bytes, window_sz2=8, lookahead_sz2=4))
-        compressed = bytearray([len(compressed_payload) & 0xFF, len(compressed_payload) >> 8]) + compressed_payload
-
-        if len(compressed) + 2 < len(raw_bytes) + 1:
-            return b"\x01\x00" + compressed
-        return b"\x00" + raw_bytes
-
-    def build_meta(self, frame_count: int) -> str:
-        passive = max(1, min(self._safe_int(self.passive_frames, 1), frame_count))
-        active = max(0, frame_count - passive)
-        frame_order = " ".join(str(i) for i in range(frame_count))
-        return (
-            "Filetype: Flipper Animation\n"
-            "Version: 1\n\n"
-            f"Width: {WIDTH}\n"
-            f"Height: {HEIGHT}\n"
-            f"Passive frames: {passive}\n"
-            f"Active frames: {active}\n"
-            f"Frames order: {frame_order}\n"
-            f"Active cycles: {max(1, self._safe_int(self.active_cycles, 1))}\n"
-            f"Frame rate: {max(1, self._safe_int(self.frame_rate, 6))}\n"
-            f"Duration: {max(1, self._safe_int(self.duration, 360))}\n"
-            f"Active cooldown: {max(0, self._safe_int(self.active_cooldown, 1))}\n\n"
-            "Bubble slots: 0\n"
-        )
-
-    def build_manifest_block(self, anim_dir_name: str) -> str:
-        min_butthurt = max(0, min(18, self._safe_int(self.min_butthurt, 0)))
-        max_butthurt = max(min_butthurt, min(18, self._safe_int(self.max_butthurt, 18)))
-        min_level = max(0, min(30, self._safe_int(self.min_level, 1)))
-        max_level = max(min_level, min(30, self._safe_int(self.max_level, 30)))
-        weight = max(1, self._safe_int(self.weight, 3))
-        return (
-            f"Name: {anim_dir_name}\n"
-            f"Min butthurt: {min_butthurt}\n"
-            f"Max butthurt: {max_butthurt}\n"
-            f"Min level: {min_level}\n"
-            f"Max level: {max_level}\n"
-            f"Weight: {weight}\n"
-        )
-
-    def update_manifest(self, anims_dir: Path, anim_dir_name: str) -> int:
-        manifest_path = anims_dir / "manifest.txt"
-        header = "Filetype: Flipper Animation Manifest\nVersion: 1\n\n"
-        blocks: dict[str, str] = {}
-
-        if manifest_path.exists():
-            raw = manifest_path.read_text(encoding="utf-8", errors="ignore")
-            body = raw
-            if raw.startswith("Filetype:"):
-                parts = raw.split("\n\n", 1)
-                body = parts[1] if len(parts) > 1 else ""
-            for block in [b.strip() for b in body.split("\n\n") if b.strip()]:
-                name = None
-                for line in block.splitlines():
-                    if line.startswith("Name:"):
-                        name = line.split(":", 1)[1].strip()
-                        break
-                if name:
-                    blocks[name] = block + "\n"
-
-        blocks[anim_dir_name] = self.build_manifest_block(anim_dir_name)
-
-        ordered_names = sorted(blocks.keys(), key=str.lower)
-        content = header + "\n".join(blocks[name].rstrip() + "\n" for name in ordered_names)
-        manifest_path.write_text(content.rstrip() + "\n", encoding="utf-8", newline="\n")
-        return len(ordered_names)
-
     def export_pack(self) -> None:
-        if not self.frames:
+        if not self.has_active_frames():
             messagebox.showerror("No GIF", "Load a GIF first.")
             return
 
@@ -698,80 +771,70 @@ class FlipperMomentumGifMaker:
 
         pack_name = sanitize_name(self.pack_name.get(), "PackName")
         anim_base = sanitize_name(self.anim_name.get(), "animation")
-        anim_dir_name = f"{anim_base}_128x64"
 
-        pack_dir = Path(out_root) / pack_name
-        anims_dir = pack_dir / "Anims"
-        anim_dir = anims_dir / anim_dir_name
-        anim_dir.mkdir(parents=True, exist_ok=True)
-
-        for old_frame in anim_dir.glob("frame_*.bm"):
-            try:
-                old_frame.unlink()
-            except OSError:
-                pass
+        if not BMEncoder.is_available():
+            messagebox.showerror(
+                "Missing dependency",
+                "Export requires heatshrink2. Install it with:\n\npip install heatshrink2",
+            )
+            return
 
         try:
-            processed_frames = [self.process_frame(frame) for frame in self.frames]
-            for idx, frame in enumerate(processed_frames):
-                (anim_dir / f"frame_{idx}.bm").write_bytes(self.convert_bm(frame))
-
-            (anim_dir / "meta.txt").write_text(
-                self.build_meta(len(processed_frames)), encoding="utf-8", newline="\n"
+            result = self.exporter.export_pack(
+                frames=self.iter_active_frames_for_export(),
+                out_root=out_root,
+                pack_name=pack_name,
+                anim_base=anim_base,
+                create_zip=bool(self.create_zip.get()),
             )
-            manifest_count = self.update_manifest(anims_dir, anim_dir_name)
         except Exception as exc:
             messagebox.showerror("Export failed", f"Could not export pack:\n{exc}")
             return
 
-        zip_path = None
-        if self.create_zip.get():
-            zip_path = Path(out_root) / f"{pack_name}.zip"
-            try:
-                with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                    for path in pack_dir.rglob("*"):
-                        if path.is_file():
-                            zf.write(path, path.relative_to(Path(out_root)))
-            except Exception as exc:
-                messagebox.showerror("ZIP failed", f"Pack exported, but ZIP creation failed:\n{exc}")
-                zip_path = None
-
-        result = [
+        lines = [
             "Built Momentum animation pack successfully.",
             "",
-            f"Folder: {pack_dir}",
-            f"Animation dir: {anim_dir}",
-            f"Frames: {len(processed_frames)}",
+            f"Folder: {result.pack_dir}",
+            f"Animation dir: {result.anim_dir}",
+            f"Frames: {result.frame_count}",
             f"Threshold: {self._safe_int(self.threshold, 140)}",
             f"Contrast: {self._safe_float(self.contrast, 2.2):.1f}",
-            f"Manifest entries: {manifest_count}",
+            f"Manifest entries: {result.manifest_count}",
         ]
-        if zip_path:
-            result.append(f"ZIP: {zip_path}")
-        result.extend(
+        if result.zip_path:
+            lines.append(f"ZIP: {result.zip_path}")
+        lines.extend(
             [
                 "",
                 "Install path on Flipper:",
-                "/ext/asset_packs/PackName/Anims/...",
+                f"/ext/asset_packs/{pack_name}/Anims/...",
                 "",
                 "Then pick the pack in Momentum Settings.",
             ]
         )
-        self.set_output_text("\n".join(result))
+        self.set_output_text("\n".join(lines))
         messagebox.showinfo("Done", "Momentum pack created.")
 
     def on_close(self) -> None:
         self.playing = False
         self._cancel_playback()
         self._cancel_queued_refreshes()
+
+        # Remove all variable traces so their callbacks (which hold a ref to
+        # self) are released before the widget tree is torn down.
+        for var, mode, tid in self._trace_ids:
+            try:
+                var.trace_remove(mode, tid)
+            except Exception:
+                pass
+        self._trace_ids.clear()
+
+        self.all_frames = []
+        self.active_indices = []
+        self._indices_clean = True
+        self.preview_image = None
+        try:
+            self.image_processor.clear_cache()
+        except Exception:
+            pass
         self.root.destroy()
-
-
-def main() -> None:
-    root = tk.Tk()
-    FlipperMomentumGifMaker(root)
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    main()

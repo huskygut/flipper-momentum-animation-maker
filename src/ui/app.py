@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from gui import FlipperMomentumGifMakerApp
+from src.ui.gui import FlipperMomentumGifMakerApp
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from constants import HEIGHT, WIDTH
+from src.core.constants import HEIGHT, WIDTH
 
 
 class ManifestBuilder:
