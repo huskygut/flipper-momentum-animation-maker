@@ -1,0 +1,1 @@
+# Byte-compiled / optimized / DLL files \n__pycache__/\n*.py[cod]\n\n# Virtual environments\n.venv/\nvenv/\n.env\n\n# IDE or editor folders \n.idea/\n.vscode/\n\n# Mac system files\n.DS_Store\nThumbs.db\n\n# Project specific files\n*.bm\nmeta.txt\nmanifest.txt\n__MACOSX/\n
