@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500">
+   <img src="huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500">
 </p>
 
 <p align="center">
-  <img src="animation.gif" width="700">
+   <img src="animation.gif" width="700">
 </p>
 
 <h1 align="center">flipper momentum animation maker</h1>
@@ -86,7 +86,6 @@ Install on Flipper
 Export the pack from the app.
 
 Copy the finished pack folder to:
-
 /ext/asset_packs/PackName/
 
 Make sure the pack contains the Anims folder and manifest.txt.
