@@ -78,7 +78,7 @@ pip install pillow heatshrink2
 
 Run the app with:
 
-python flipper_momentum_gif_maker.py
+python app.py
 
 
 Install on Flipper
