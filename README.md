@@ -25,8 +25,6 @@ Improved caching, preview behavior, and general stability
 
 ---
 
-Flipper Momentum Animation Maker
-
 Flipper Momentum Animation Maker is a desktop Python tool that turns GIFs into Flipper Zero Momentum-compatible dolphin animations.
 
 It loads a GIF, extracts the frames, resizes them to 128x64, converts them to 1-bit monochrome, and exports the files needed for a Momentum animation pack. That includes the .bm frames, meta.txt, manifest.txt, and the correct folder structure.
