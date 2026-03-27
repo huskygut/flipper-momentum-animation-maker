@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-   <img src="Images/animation.gif" alt="Animation Demo" width="700">
+   <img src="Images/animations.gif" alt="Animation Demo" width="700">
 </p>
 
 <h1 align="center">Flipper Momentum Animation Maker</h1>
