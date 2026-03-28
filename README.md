@@ -1,27 +1,37 @@
-
 <p align="center">
-   <img src="Images/huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500">
+  <img src="Images/huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
 </p>
 
 <p align="center">
-   <img src="Images/animations.gif" alt="Animation Demo" width="700">
+  <img src="Images/animations.gif" alt="Animation Demo" width="700" />
 </p>
 
 <h1 align="center">Flipper Momentum Animation Maker</h1>
 
 <p align="center">
-Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simple desktop GUI.
+  Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simple desktop GUI.
+</p>
+
+<p align="center">
+  <a href="#what-it-does">What it does</a> •
+  <a href="#current-status">Current status</a> •
+  <a href="#how-to-use-it">How to use it</a> •
+  <a href="#running-from-source">Running from source</a> •
+  <a href="#install-on-flipper">Install on Flipper</a> •
+  <a href="#output">Output</a> •
+  <a href="#limitations">Limitations</a> •
+  <a href="#planned-improvements">Planned improvements</a>
 </p>
 
 ---
 
-Recent Update
-Refactored the app from a single-file script into a modular multi-file project
-Added built-in frame tools for reducing and trimming GIF frames
-Improved export safety with rollback protection
-Fixed .bm export issues
-Improved caching, preview behavior, and general stability
+## Recent Update
 
+- Refactored the app from a single-file script into a modular multi-file project
+- Added built-in frame tools for reducing and trimming GIF frames
+- Improved export safety with rollback protection
+- Fixed .bm export issues
+- Improved caching, preview behavior, and general stability
 
 ---
 
@@ -31,34 +41,40 @@ It loads a GIF, extracts the frames, resizes them to 128x64, converts them to 1-
 
 This tool is currently made for Momentum-style animation packs. It is not meant to be a universal Flipper animation tool for every firmware.
 
-What it does
+---
 
-  Loads GIF files
-  Extracts frames automatically
-  Resizes frames to 128x64
-  Converts frames to 1-bit monochrome
-  Lets you adjust threshold and contrast before export
-  Shows a live preview inside the app
-  Exports .bm frame files
-  Builds meta.txt and updates   nifest.txt
-  Creates the correct folder structure for Momentum
-  Can also make a ZIP of the finished pack
+## What it does
 
-Current status
+- Loads GIF files
+- Extracts frames automatically
+- Resizes frames to 128x64
+- Converts frames to 1-bit monochrome
+- Lets you adjust threshold and contrast before export
+- Shows a live preview inside the app
+- Exports .bm frame files
+- Builds meta.txt and updates   nifest.txt
+- Creates the correct folder structure for Momentum
+- Can also make a ZIP of the finished pack
+
+---
+
+## Current status
 
 The app is working and exporting correctly.
 
-Frame ordering is fixed.
-Manifest formatting is fixed.
-Meta.txt active frame handling is fixed.
-Animation naming with _128x64 is fixed.
-Preview scaling has been improved.
-The preview box size was reduced to fit the UI better.
-Threshold and contrast controls are working with both sliders and number input.
+- Frame ordering is fixed.
+- Manifest formatting is fixed.
+- Meta.txt active frame handling is fixed.
+- Animation naming with _128x64 is fixed.
+- Preview scaling has been improved.
+- The preview box size was reduced to fit the UI better.
+- Threshold and contrast controls are working with both sliders and number input.
 
 The app is stable and usable right now, although the preview is still not a perfect match for the Flipper screen.
 
-How to use it
+---
+
+## How to use it
 
 1. Open the app
 2. Load a GIF
@@ -68,32 +84,45 @@ How to use it
 6. Export the pack
 7. Copy the finished pack to your Flipper Momentum asset pack folder
 
-Running from source
+---
+
+## Running from source
 
 Install Python and the required packages:
 
+```bash
 pip install pillow heatshrink2
+```
 
 Run the app with:
 
+```bash
 python app.py
+```
 
+---
 
-Install on Flipper
+## Install on Flipper
 
 Export the pack from the app.
 
 Copy the finished pack folder to:
+
+```text
 /ext/asset_packs/PackName/
+```
 
 Make sure the pack contains the Anims folder and manifest.txt.
 
 Then open Momentum settings on the Flipper and select the pack.
 
-Output
+---
+
+## Output
 
 The app exports a folder structure like this:
 
+```text
 PackName/
   Anims/
     AnimationName_128x64/
@@ -102,27 +131,36 @@ PackName/
       frame_2.bm
       meta.txt
     manifest.txt
+```
 
-Why I made this
+---
+
+## Why I made this
 
 I wanted a simpler way to make custom Momentum animations without having to manually convert frames and build the files by hand. This started as a small utility and grew into a more complete desktop tool.
 
-Limitations
+---
 
-  Right now this is focused on Momentum-compatible animation packs
-  The preview is close, but not identical to the way the Flipper screen looks on device
-  The code started as a single-file utility, so it will likely be split into separate files as the project grows
+## Limitations
 
-Planned improvements
+- Right now this is focused on Momentum-compatible animation packs
+- The preview is close, but not identical to the way the Flipper screen looks on device
+- The code started as a single-file utility, so it will likely be split into separate files as the project grows
 
-  Better preview accuracy
-  Frame scrubber
-  FPS control
-  Drag and drop support
-  Windows EXE build
-  Cleaner code structure split into     multiple files
-  Better demo GIF and screenshots
+---
 
-Thanks
+## Planned improvements
+
+- Better preview accuracy
+- Frame scrubber
+- FPS control
+- Drag and drop support
+- Windows EXE build
+- Cleaner code structure split into     multiple files
+- Better demo GIF and screenshots
+
+---
+
+## Thanks
 
 Thanks to everyone who tested it, gave feedback, and pointed out things that needed fixing. The project is still growing, and useful feedback helps a lot..
