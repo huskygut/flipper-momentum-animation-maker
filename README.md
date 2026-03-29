@@ -1,20 +1,10 @@
 ## Running from source
 
-Project layout (relevant paths):
-
-flipper-momentum-animation-maker/
-├─ README.md
-├─ requirements.txt
-├─ Images/
-└─ src/
-   ├─ app.py
-   ├─ gui.py
-   ├─ exporter.py
-   ├─ image_processing.py
-   ├─ bm_encoder.py
-   ├─ manifest.py
-   ├─ constants.py
-   ├─ utils.py
-   └─ requirements.txt
+```bash
+git clone https://github.com/huskygut/flipper-momentum-animation-maker.git
+cd flipper-momentum-animation-maker
+pip install -r requirements.txt
+python src/app.py
+```
 
 Install Python and the required packages:
