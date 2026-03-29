@@ -141,12 +141,13 @@ The app exports a folder structure like this:
 ```text
 PackName/
   Anims/
-    AnimationName_128x64/
+     manifest.txt
+AnimationName_128x64/
       frame_0.bm
       frame_1.bm
       frame_2.bm
       meta.txt
-    manifest.txt
+    
 ```
 
 <div style="font-size: 1.05rem; line-height: 1.6;">
