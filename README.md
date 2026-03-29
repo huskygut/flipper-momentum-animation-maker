@@ -105,7 +105,7 @@ Run the app with:
 </div>
 
 ```bash
-python app.py
+python src/app.py
 ```
 
 <div style="font-size: 1.05rem; line-height: 1.6;">
