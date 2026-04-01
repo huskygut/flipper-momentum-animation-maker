@@ -1,9 +1,7 @@
 <p align="center">
   <img src="Images/huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
 </p>
-<p align="center">
-  <img src="Images/animations.gif" alt="Animation Demo" width="700" />
-</p>
+
 <h1 align="center">Flipper Momentum Animation Maker</h1>
 <p align="center" style="font-size: 1.15rem;">
   Version 002
