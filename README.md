@@ -2,6 +2,10 @@
   <img src="Images/huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
 </p>
 
+<p align="center">
+  <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
+</p>
+
 <h1 align="center">Flipper Momentum Animation Maker</h1>
 <p align="center" style="font-size: 1.15rem;">
   Version 002
