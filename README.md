@@ -1,5 +1,3 @@
-<p align="center">
-  <img src="./images/husky.png" alt="Huskygut Flipper" style="max-width:100%; height:auto;">
 
 <h2 align="center">
   <a href="https://github.com/huskygut/flipper-momentum-animation-maker/releases/download/v0.0.2/Flipper-Momentum-%20Animation-Maker.zip">
