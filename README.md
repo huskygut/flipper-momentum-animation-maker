@@ -4,11 +4,12 @@
   
 <p>
   <h2 align="center">
-  <a href="https://github.com/user-attachments/files/26393414/Flipper-Momentum-.Animation-Maker.zip">
+  <a href="https://github.com/user-attachments/files/26393414/flipperanim.gif">
     Download the Windows Build
   </a>
 </h2>
 </p>
+
 <p
 <h1 align="center">Flipper Momentum Animation Maker</h1>
 
@@ -16,9 +17,15 @@
   Version 002
 </p>
 
+
+
+<p align="center"> <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
+</p>
+
 <p align="center">
   <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
 </p>
+
 <p align="center" style="font-size: 1.1rem;">
   Create Momentum-compatible Flipper Zero dolphin animations from GIFs with a simple desktop GUI.
 </p>
