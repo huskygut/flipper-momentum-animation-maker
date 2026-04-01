@@ -1,4 +1,3 @@
-flipperanim.gif
 
 <p align="center">
   <img src="./Images/husky.png" alt="Huskygut Flipper" style="max-width:100%; height:auto;">
