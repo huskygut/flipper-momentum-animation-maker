@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="Images/huskygut\_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
-</p>
+
 
 <p>
 <h2 align="center">
