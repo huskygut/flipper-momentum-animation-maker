@@ -1,5 +1,13 @@
 <p align="center">
-  <img src="Images/huskygut_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
+  <img src="Images/huskygut\_flipper.png" alt="HuskyGut Flipper Logo" width="500" />
+</p>
+
+<p>
+<h2 align="center">
+  <a href="https://github.com/huskygut/flipper-momentum-animation-maker/releases/download/v0.0.2/Flipper-Momentum-%20Animation-Maker.zip">
+    Download the Windows Build
+  </a>
+</h2>
 </p>
 
 <p>
