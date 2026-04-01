@@ -1,3 +1,5 @@
+flipperanim.gif
+
 <p align="center">
   <img src="./Images/husky.png" alt="Huskygut Flipper" style="max-width:100%; height:auto;">
 </p>
@@ -16,14 +18,8 @@
 <p align="center" style="font-size: 1.15rem;">
   Version 002
 </p>
-
-
-
-<p align="center"> <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
-</p>
-
 <p align="center">
-  <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
+  <img src="Images/flipperanim.gif" alt="FMAM screenshot 2" width="700" />
 </p>
 
 <p align="center" style="font-size: 1.1rem;">
