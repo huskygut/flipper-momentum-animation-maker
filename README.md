@@ -166,6 +166,34 @@ pip install -r requirements.txt
 python src/app.py
 ```
 
+
+<hr>
+
+<h2 id="web-app">Web App</h2>
+
+<h3>Run the browser-based exporter locally:</h3>
+
+```bash
+pip install -r requirements.txt
+python src/webapp.py
+```
+
+<h3>Open:</h3>
+
+```text
+http://localhost:8000
+```
+
+<h3>The web app accepts a GIF upload and downloads a Momentum-compatible ZIP containing .bm frames, meta.txt, and manifest.txt.</h3>
+
+<h3>Deploying</h3>
+
+<h3>The repository includes a Procfile for Python web hosts that support a PORT environment variable:</h3>
+
+```text
+web: python src/webapp.py --host 0.0.0.0 --port ${PORT:-8000}
+```
+
 <hr>
 
 <h2 id="install-on-flipper">Install on Flipper</h2>
