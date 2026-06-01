@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flipper Momentum Animation Maker Web</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-preview-scale="5">
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Flipper Zero / Momentum Firmware</p>
+        <h1>Flipper Animation Maker</h1>
+        <p class="subtitle">Load a GIF, trim or reduce frames, preview the 128×64 output, remove bad frames, then export a Momentum-compatible asset pack ZIP.</p>
+      </div>
+      <div class="status-card" aria-live="polite">
+        <strong id="statusTitle">Ready</strong>
+        <span id="statusText">Choose a GIF to begin.</span>
+      </div>
+    </header>
+
+    <section class="panel upload-panel">
+      <label class="file-drop" for="gifFile">
+        <span>Choose GIF</span>
+        <input id="gifFile" type="file" accept="image/gif">
+        <small id="fileName">No file selected</small>
+      </label>
+
+      <div class="grid two">
+        <label>Pack name
+          <input id="packName" value="MomentumPack" maxlength="31" autocomplete="off" autocapitalize="none" spellcheck="false">
+        </label>
+        <label>Animation name
+          <input id="animationName" value="animation" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false">
+        </label>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <section class="panel preview-panel">
+        <div class="panel-title-row">
+          <h2>Preview</h2>
+          <span class="mini-pill">128×64</span>
+        </div>
+
+        <div class="preview-scroll">
+          <div class="flipper-frame">
+            <canvas id="previewCanvas" width="128" height="64"></canvas>
+          </div>
+        </div>
+
+        <div class="zoom-row">
+          <button id="zoom2Btn" type="button">2x</button>
+          <button id="zoom3Btn" type="button">3x</button>
+          <button id="zoom4Btn" type="button">4x</button>
+          <button id="zoom5Btn" type="button">5x</button>
+        </div>
+
+        <div class="transport">
+          <button id="prevBtn" type="button">Prev</button>
+          <button id="playBtn" type="button">Play</button>
+          <button id="nextBtn" type="button">Next</button>
+        </div>
+
+        <label class="range-label">Frame
+          <input id="frameSlider" type="range" min="0" max="0" value="0">
+        </label>
+
+        <div class="button-row">
+          <button id="removeCurrentBtn" type="button">Remove Current</button>
+          <button id="restoreLastBtn" type="button">Restore Last</button>
+        </div>
+
+        <div class="stats" id="stats">
+          <span>Original: 0</span>
+          <span>Active: 0</span>
+          <span>Removed: 0</span>
+          <span>Frame: 0/0</span>
+        </div>
+      </section>
+
+      <section class="panel controls-panel">
+        <h2>Conversion</h2>
+        <div class="grid two">
+          <label>Fit mode
+            <select id="fitMode">
+              <option value="contain">Contain</option>
+              <option value="cover">Cover</option>
+            </select>
+          </label>
+          <label>Frame rate
+            <input id="frameRate" type="number" value="5" min="1" max="60" inputmode="numeric">
+          </label>
+        </div>
+
+        <label class="range-label">Threshold <output id="thresholdOut">140</output>
+          <input id="threshold" type="range" min="0" max="255" value="140">
+        </label>
+
+        <label class="range-label">Contrast <output id="contrastOut">2.2</output>
+          <input id="contrast" type="range" min="0.2" max="4" step="0.1" value="2.2">
+        </label>
+
+        <label class="range-label">Brightness <output id="brightnessOut">0</output>
+          <input id="brightness" type="range" min="-100" max="100" step="1" value="0">
+        </label>
+
+        <label class="range-label">Sharpen <output id="sharpenOut">0.0</output>
+          <input id="sharpen" type="range" min="0" max="3" step="0.1" value="0.0">
+        </label>
+
+        <div class="button-row compact">
+          <button id="presetBalancedBtn" type="button">Balanced</button>
+          <button id="presetDarkBtn" type="button">Darker</button>
+          <button id="presetLineBtn" type="button">Line Art</button>
+        </div>
+
+        <div class="small-note">
+          Controls now use a better pipeline: grayscale, real contrast, brightness offset, optional sharpen, then threshold.
+        </div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <h2>Frame tools</h2>
+      <div class="grid four">
+        <label>Target frames
+          <input id="targetFrames" type="number" value="50" min="1" inputmode="numeric">
+        </label>
+        <label>Trim start
+          <input id="trimStart" type="number" value="0" min="0" inputmode="numeric">
+        </label>
+        <label>Trim end
+          <input id="trimEnd" type="number" value="0" min="0" inputmode="numeric">
+        </label>
+        <label>Hold last frame
+          <input id="holdLastFrame" type="number" value="0" min="0" max="1000" inputmode="numeric">
+        </label>
+      </div>
+      <div class="button-row">
+        <button id="reduceBtn" type="button">Reduce Evenly</button>
+        <button id="trimBtn" type="button">Apply Trim</button>
+        <button id="resetBtn" type="button">Reset All</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Frame thumbnails</h2>
+      <div class="small-note">Click an active thumbnail to jump to it. Click a dimmed thumbnail to restore that removed frame.</div>
+      <div id="thumbStrip" class="thumb-strip">No frames loaded.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Momentum metadata</h2>
+      <div class="grid four">
+        <label>Duration
+          <input id="duration" type="number" value="360" min="1" inputmode="numeric">
+        </label>
+        <label>Passive frames
+          <input id="passiveFrames" type="number" value="1" min="1" inputmode="numeric">
+        </label>
+        <label>Active cycles
+          <input id="activeCycles" type="number" value="1" min="1" inputmode="numeric">
+        </label>
+        <label>Active cooldown
+          <input id="activeCooldown" type="number" value="1" min="0" inputmode="numeric">
+        </label>
+        <label>Min butthurt
+          <input id="minButthurt" type="number" value="0" min="0" max="18" inputmode="numeric">
+        </label>
+        <label>Max butthurt
+          <input id="maxButthurt" type="number" value="18" min="0" max="18" inputmode="numeric">
+        </label>
+        <label>Min level
+          <input id="minLevel" type="number" value="1" min="0" max="30" inputmode="numeric">
+        </label>
+        <label>Max level
+          <input id="maxLevel" type="number" value="30" min="0" max="30" inputmode="numeric">
+        </label>
+        <label>Weight
+          <input id="weight" type="number" value="3" min="1" inputmode="numeric">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel export-panel">
+      <button id="exportBtn" class="export-btn" type="button" disabled>Export Momentum ZIP</button>
+      <div class="small-note export-note">
+        ZIP export is the stable release path. If Windows shows a warning, right-click the exported ZIP, choose Properties, check Unblock if shown, then extract again.</div>
+      <pre id="outputText">No GIF loaded.</pre>
+    </section>
+  </main>
+
+  <script src="js/zip.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

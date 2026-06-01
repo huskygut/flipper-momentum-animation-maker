@@ -1,0 +1,85 @@
+Final senior software engineering review
+
+Release decision
+
+This is the stable ZIP-only build.
+
+The direct folder save feature was removed because browser permission behavior was inconsistent. Shipping a broken button is worse than not shipping the feature.
+
+Final review areas
+
+Memory leaks and resource leaks
+
+- Old GIF frame canvases are disposed when a new GIF is loaded.
+- Cached processed frame canvases are disposed when the cache is cleared.
+- Processed-frame cache is bounded.
+- Playback timer is stopped before reset and export.
+- Object URLs from ZIP export are revoked after download.
+
+GIF decoding
+
+- Uses ImageDecoder when available.
+- Falls back to a built-in GIF parser for browsers without ImageDecoder or for GIFs ImageDecoder rejects.
+- The fallback handles global/local palettes, transparency, interlace passes, and GIF disposal modes 2 and 3.
+- Best performance remains in current Brave, Chrome, and Edge.
+- Large GIF warning is retained.
+- Frame decode cap is retained.
+
+Large GIF handling
+
+- 64 MB warning remains.
+- 500 decoded frame cap remains.
+- 180 thumbnail render cap remains.
+- Processed-frame cache cap remains.
+- Source frames are bounded before storage to reduce memory pressure; export remains 128x64.
+- Hold-last-frame repeats are capped at 1000 to avoid huge meta.txt files.
+- Preview and thumbnail refreshes are debounced.
+
+Image controls
+
+- Brightness is an offset, not a multiplier.
+- Contrast is centered around 128.
+- Sharpen is a real grayscale sharpen pass.
+- Threshold runs after grayscale, contrast, brightness, and sharpen.
+
+Export
+
+- ZIP export is retained as the stable path.
+- Duplicate ZIP entries are checked.
+- Empty ZIP export is blocked.
+- UTF-8 ZIP filename flag is set.
+- ZIP32 size/name limits are checked before writing headers.
+- ZIP path structure is:
+  PackName/Anims/manifest.txt
+  PackName/Anims/AnimationName_128x64/meta.txt
+  PackName/Anims/AnimationName_128x64/frame_0.bm
+
+Momentum metadata
+
+- meta.txt values are clamped.
+- manifest.txt values are clamped.
+- Pack and animation names are sanitized.
+- Pack names are capped at 31 characters.
+- Windows reserved names are avoided.
+- Hold-last-frame repeats now count toward Passive frames or Active frames, matching the generated Frames order length.
+- All-passive animations now export Active frames, Active cycles, and Active cooldown as 0.
+
+Preview
+
+- Preview zoom buttons are:
+  2x
+  3x
+  4x
+  5x
+- Export remains 128x64 no matter what preview zoom is used.
+
+Known limitation
+
+The BM files use the simple uncompressed BM payload. This avoids needing Python, WebAssembly, or heatshrink compression in the browser.
+
+
+Additional verification patch
+
+- Repacked the release ZIP with standard forward-slash ZIP paths instead of Windows backslash paths. This makes the package extract correctly on non-Windows tools and GitHub-style environments.
+- Fixed GIF type validation so files with an empty MIME type are still rejected unless the filename ends in .gif.
+- Fixed Active cooldown so user value 0 remains valid when active frames exist, while all-passive exports still force Active cooldown to 0.
