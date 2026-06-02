@@ -1,5 +1,5 @@
 FLIPPER MOMENTUM ANIMATION MAKER WEB APP
-<p>
+
 <h1 align="center">
 <a href="https://huskygut.github.io/flipper-momentum-animation-maker/">
 https://huskygut.github.io/flipper-momentum-animation-maker/
