@@ -1,10 +1,4 @@
-FLIPPER MOMENTUM ANIMATION MAKER WEB APP
-
-<h1 align="center">
-<a href="https://huskygut.github.io/flipper-momentum-animation-maker/">
-https://huskygut.github.io/flipper-momentum-animation-maker/
-</a>
-</h1>
+<h1 align="center">FLIPPER MOMENTUM ANIMATION MAKER</h1> <p align="center"> <a href="https://huskygut.github.io/flipper-momentum-animation-maker/"> <img src="https://img.shields.io/badge/OPEN-WEB%20APP-orange?style=for-the-badge"> </a> </p> <h1 align="center"> https://huskygut.github.io/flipper-momentum-animation-maker/ </h1>
 
 Convert GIF animations into Flipper Zero Momentum animation packs directly in your browser.
 
