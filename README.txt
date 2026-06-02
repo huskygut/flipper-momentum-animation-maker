@@ -1,82 +1,122 @@
-Flipper Animation Maker Web
-
+FLIPPER MOMENTUM ANIMATION MAKER WEB APP
+<p>
+<h1 align="center">
+<a href="https://huskygut.github.io/flipper-momentum-animation-maker/">
 https://huskygut.github.io/flipper-momentum-animation-maker/
+</a>
+</h1>
+Convert GIF animations into Flipper Zero Momentum animation packs directly in your browser.
 
-What this is
+Built for speed, simplicity, and offline use.
 
-A browser-based Flipper Zero Momentum animation maker.
+Created by Huskygut Studios
 
-It loads a GIF, converts the frames to 128x64 black-and-white Flipper-style frames, and exports a Momentum-compatible asset pack ZIP.
+What This App Does
 
-Files
+• Load GIF animations directly into the browser
+• Extract frames automatically
+• Preview animations before export
+• Convert frames for Flipper style display
+• Resize output to 128×64
+• Export animation folders
+• Generate meta.txt automatically
+• Generate manifest.txt automatically
+• Export as ZIP
+• Run locally without Python installation
 
-index.html
-css/styles.css
-js/app.js
-js/zip.js
-README.txt
-REVIEW_NOTES.txt
+Current Features
 
-How to run
+• GIF upload
+• Frame preview
+• Play animation
+• Pause animation
+• Frame slider
+• Brightness adjustment
+• Contrast adjustment
+• Sharpen filter
+• Contain mode
+• Cover mode
+• Frame reduction
+• Keep every N frames
+• Trim beginning frames
+• Trim ending frames
+• Reset frames
+• Animation naming
+• ZIP export
+• Flipper preview mode
 
-Open index.html in Brave, Chrome, or Edge.
+Frame Tools
 
-No install is required.
+Large GIFs can create huge exports and slow previews.
 
-How to use
+Use built in tools to simplify animations.
 
-1. Open index.html.
-2. Choose a GIF.
-3. Adjust threshold, contrast, brightness, sharpen, and fit mode.
-4. Try the Balanced, Darker, or Line Art presets.
-5. Use Remove Current, Restore Last, Reduce Evenly, Apply Trim, or Reset All.
-6. Click Export Momentum ZIP.
-7. Extract the exported ZIP.
-8. Copy the generated pack folder to:
+• Reduce frame count evenly
+• Remove unnecessary frames
+• Keep animation timing smoother
+• Reset back to original frames at any time
+
+How To Use
+
+• Open the web app
+• Select a GIF
+• Wait for frames to load
+• Adjust brightness and contrast
+• Apply sharpen if needed
+• Choose Contain or Cover
+• Reduce frames if animation is large
+• Preview output
+• Export ZIP
+• Copy exported files to Flipper
+
+Install On Flipper
+
+• Extract ZIP
+• Copy folder into:
 
 /ext/asset_packs/
 
-Output structure
+• Launch Momentum firmware
+• Open animation settings
+• Select your animation pack
 
-PackName/
-  Anims/
-    manifest.txt
-    AnimationName_128x64/
-      meta.txt
-      frame_0.bm
-      frame_1.bm
-      frame_2.bm
+Recommended Settings
 
-Preview zoom
+• Threshold around 140
+• Frame rate around 6
+• Duration around 360
+• Weight around 3
+• Active cycles 1
+• Cooldown 1
 
-The preview buttons are:
+Large GIFs may work better with reduced frame counts.
 
-2x
-3x
-4x
-5x
+Known Limitations
 
-The exported animation always remains 128x64.
+• Extremely large GIF files may require frame reduction
+• Browser memory limits vary
+• Preview speed depends on device
+• Some browsers process GIF decoding differently
+• Final device testing is always recommended
 
-Windows note
+Project Goals
 
-If Windows shows a warning about files from the exported ZIP, right-click the exported ZIP, choose Properties, check Unblock if shown, click Apply, then extract again.
+• Reliable GIF loading
+• Accurate Flipper preview
+• Stable BM export
+• Fast export times
+• Simple interface
+• No install headaches
 
-Browser note
+Future Ideas
 
-This version uses ImageDecoder when the browser supports it, then falls back to a built-in GIF parser when ImageDecoder is unavailable or fails.
+• Drag and drop upload
+• Dithering modes
+• Better frame timeline
+• Batch export
+• Theme options
+• Advanced preview controls
 
-Brave, Chrome, and Edge are still the fastest path. Safari and Firefox should handle standard GIFs through the compatibility decoder.
+Thank you for trying Flipper Momentum Animation Maker.
 
-Known limitation
-
-The BM export uses the simple uncompressed BM payload format. This is larger than heatshrink-compressed BM files but simpler and avoids needing a Python server or WebAssembly compressor.
-
-Very large GIFs are capped to protect the browser tab:
-
-- File warning starts at 64 MB.
-- Decoding is capped at 500 frames.
-- Source frames are stored at a bounded size because export is always 128x64.
-- Hold-last-frame repeats are capped at 1000.
-
-https://huskygut.github.io/flipper-momentum-animation-maker/
+Made by Huskygut Studios 🚀
