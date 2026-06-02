@@ -1,5 +1,7 @@
 Flipper Animation Maker Web
 
+https://huskygut.github.io/flipper-momentum-animation-maker/
+
 What this is
 
 A browser-based Flipper Zero Momentum animation maker.
@@ -76,3 +78,5 @@ Very large GIFs are capped to protect the browser tab:
 - Decoding is capped at 500 frames.
 - Source frames are stored at a bounded size because export is always 128x64.
 - Hold-last-frame repeats are capped at 1000.
+
+https://huskygut.github.io/flipper-momentum-animation-maker/
